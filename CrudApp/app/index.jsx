@@ -10,7 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useState, useContext, useEffect } from "react";
 import { data } from "@/data/todos";
 import { ThemeContext } from "@/context/ThemeContext";
-
+import { useRouter } from "expo-router";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 
 import { Inter_500Medium, useFonts } from "@expo-google-fonts/inter";
@@ -22,6 +22,7 @@ export default function Index() {
   const [todos, setTodos] = useState([]);
   const [text, setText] = useState("");
   const { colorScheme, setColorScheme, theme } = useContext(ThemeContext);
+  const router = useRouter();
   const [loaded, error] = useFonts({
     Inter_500Medium,
   });
@@ -30,33 +31,30 @@ export default function Index() {
     const fetchData = async () => {
       try {
         const jsonValue = await AsyncStorage.getItem("TodoApp");
-        const storageTodos = jsonValue != null?JSON.parse
-        (jsonValue):null
-        if(storageTodos && storageTodos.length){
-          setTodos(storageTodos.sort((a,b)=>b.id - a.id))
-        }else{
-          setTodos(data.sort((a,b)=>b.id - a.id))
+        const storageTodos = jsonValue != null ? JSON.parse(jsonValue) : null;
+        if (storageTodos && storageTodos.length) {
+          setTodos(storageTodos.sort((a, b) => b.id - a.id));
+        } else {
+          setTodos(data.sort((a, b) => b.id - a.id));
         }
       } catch (e) {
-
         console.error(e);
       }
     };
-    fetchData()
+    fetchData();
   }, [data]);
 
-  useEffect(()=>{
-const storeData=async()=>{
-  try{
-    const jsonValue = JSON.stringify(todos)
-    await AsyncStorage.setItem("TodoApp",jsonValue)
-
-  }catch(e){
-    console.error(e)
-  }
-}
-storeData()
-  },[todos])
+  useEffect(() => {
+    const storeData = async () => {
+      try {
+        const jsonValue = JSON.stringify(todos);
+        await AsyncStorage.setItem("TodoApp", jsonValue);
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    storeData();
+  }, [todos]);
   if (!loaded && !error) {
     return null;
   }
@@ -83,14 +81,19 @@ storeData()
     setTodos(todos.filter((todo) => todo.id !== id));
   };
 
+  const handlePress = (id) => {
+    router.push(`/todos/${id}`);
+  };
   const renderItem = ({ item }) => (
     <View style={styles.todoItem}>
-      <Text
-        style={[styles.todoText, item.completed && styles.completedText]}
-        onPress={() => toggleTodo(item.id)}
+      <Pressable
+        onLongPress={() => toggleTodo(item.id)}
+        onPress={() => handlePress(item.id)}
       >
-        {item.title}
-      </Text>
+        <Text style={[styles.todoText, item.completed && styles.completedText]}>
+          {item.title}
+        </Text>
+      </Pressable>
       <Pressable onPress={() => removeTodo(item.id)}>
         <MaterialCommunityIcons
           name="delete-circle"
@@ -140,7 +143,7 @@ storeData()
         itemLayoutAnimation={LinearTransition}
         keyboardDismissMode="on-drag"
       />
-      <StatusBar style={colorScheme === 'dark'? 'light':'dark'}/>
+      <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
     </SafeAreaView>
   );
 }
